@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+
+ARG GOLANG_VERSION=1.22.5
+
+###
+FROM --platform=$BUILDPLATFORM golang:${GOLANG_VERSION}-alpine AS builder
+
+ARG HOSTOS
+ARG HOSTARCH
+
+ENV GOOS=${HOSTOS}
+ENV GOARCH=${HOSTARCH}
+
+# https://github.com/ollama/ollama/blob/main/docs/development.md
+# cmake version 3.24 or higher
+# go version 1.22 or higher
+# gcc version 11.4.0 or higher
+RUN apk add --no-cache \
+	cmake make gcc g++ llvm clang \
+	bash git musl-dev build-base
+
+ENV CMAKE_C_COMPILER=clang
+ENV CMAKE_CXX_COMPILER=clang++
+ENV CMAKE_C_FLAGS="-target ${HOSTARCH}-apple-darwin"
+ENV CMAKE_CXX_FLAGS="-target ${HOSTARCH}}-apple-darwin"
+
+#
+ENV CGO_ENABLED=1
+ARG GOLANG_VERSION
+WORKDIR /go/src/github.com/ollama/ollama
+
+COPY . .
+
+#
+ARG GOFLAGS
+ARG CGO_CFLAGS=""
+
+RUN go generate ./...
+RUN go build -trimpath .
+

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -eu
+
+echo "Installing ollama $VERSION..."
+
+./build.sh
+
+#
+bin=ollama
+
+if [ ! -e "$DOCKER_APP_BASE/bin/$bin" ]; then
+	ln -s "$DOCKER_APP_PATH/run.sh" "$DOCKER_APP_BASE/bin/$bin"
+fi
